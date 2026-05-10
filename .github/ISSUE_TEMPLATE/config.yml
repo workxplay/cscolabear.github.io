@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 讀者留言討論
+    url: https://github.com/cscolabear/cscolabear.github.io/issues
+    about: 歡迎在各文章的 Issue 下方留言討論
