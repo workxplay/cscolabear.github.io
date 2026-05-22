@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress'
 import seoConfig from '../../seo.config.js'
+import { applyLazyImageLoading } from './markdown/lazy-images.js'
 
 const { site, seo, social } = seoConfig
 
@@ -233,6 +234,9 @@ export default defineConfig({
       permalink: true,
       permalinkBefore: false,
       permalinkSymbol: '#'
+    },
+    config: (md) => {
+      applyLazyImageLoading(md)
     }
   },
 
