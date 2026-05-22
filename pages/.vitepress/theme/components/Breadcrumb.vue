@@ -39,33 +39,12 @@ const getBreadcrumbItems = () => {
   return items
 }
 
-// 生成 BreadcrumbList 結構化資料
-const getBreadcrumbSchema = () => {
-  const items = getBreadcrumbItems()
-  
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: items.map((item, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: item.name,
-      item: item.url
-    }))
-  }
-}
-
 const breadcrumbItems = getBreadcrumbItems()
 const showBreadcrumb = breadcrumbItems.length > 1
 </script>
 
 <template>
   <div v-if="showBreadcrumb" class="vp-breadcrumb">
-    <!-- 結構化資料 -->
-    <component :is="'script'" type="application/ld+json">
-      {{ JSON.stringify(getBreadcrumbSchema()) }}
-    </component>
-    
     <!-- UI 顯示 -->
     <nav aria-label="麵包屑" class="breadcrumb-nav">
       <ol class="breadcrumb-list">

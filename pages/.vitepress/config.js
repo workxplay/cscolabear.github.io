@@ -24,6 +24,146 @@ const toSitemapKey = (p) => {
   return segments[segments.length - 1] || ''
 }
 
+const siteAuthorName = typeof site.author === 'string'
+  ? site.author
+  : site.author?.name || ''
+
+const buildPageUrl = (pageData) => {
+  const slug = pageData.frontmatter.slug
+    || pageData.relativePath.replace(/\.md$/, '').replace(/index$/, '')
+
+  return slug ? `${site.url}/${slug}` : site.url
+}
+
+const serializeJsonLd = (data) => JSON.stringify(data).replace(/</g, '\\u003C')
+
+const buildStructuredData = (pageData) => {
+  const { frontmatter, title, relativePath } = pageData
+  const description = frontmatter.description || site.description
+  const pageUrl = buildPageUrl(pageData)
+  const language = site.locale.replace('_', '-')
+
+  if (frontmatter.issueId) {
+    const keywords = [
+      ...(Array.isArray(frontmatter.keywords) ? frontmatter.keywords : []),
+      ...(Array.isArray(frontmatter.tags) ? frontmatter.tags : [])
+    ]
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: frontmatter.title || title,
+      description,
+      author: {
+        '@type': 'Person',
+        name: frontmatter.author || siteAuthorName,
+        url: `${site.url}/about`
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: site.name,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${site.url}${seo.defaultOgImage}`
+        }
+      },
+      datePublished: frontmatter.date,
+      dateModified: frontmatter.updated || frontmatter.date,
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': pageUrl
+      },
+      ...(keywords.length > 0 ? {
+        keywords: [...new Set(keywords)].join(', ')
+      } : {}),
+      ...(frontmatter.readingTime ? {
+        timeRequired: `PT${frontmatter.readingMinutes || 1}M`
+      } : {}),
+      inLanguage: language,
+      image: frontmatter.image || `${site.url}${seo.defaultOgImage}`
+    }
+  }
+
+  if (relativePath === 'index.md') {
+    return [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: site.name,
+        description: site.description,
+        url: site.url,
+        author: {
+          '@type': 'Person',
+          name: siteAuthorName
+        },
+        inLanguage: language
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Blog',
+        name: site.name,
+        description: site.description,
+        url: site.url,
+        author: {
+          '@type': 'Person',
+          name: siteAuthorName
+        },
+        inLanguage: language
+      }
+    ]
+  }
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: frontmatter.title || title,
+    description,
+    url: pageUrl,
+    inLanguage: language
+  }
+}
+
+const buildBreadcrumbSchema = (pageData) => {
+  const items = [
+    {
+      name: '首頁',
+      url: site.url
+    }
+  ]
+
+  if (pageData.frontmatter.issueId) {
+    items.push({
+      name: '文章列表',
+      url: `${site.url}/articles`
+    })
+
+    items.push({
+      name: pageData.frontmatter.title || pageData.title,
+      url: buildPageUrl(pageData)
+    })
+  } else if (pageData.relativePath !== 'index.md') {
+    items.push({
+      name: pageData.frontmatter.title || pageData.title,
+      url: buildPageUrl(pageData)
+    })
+  }
+
+  if (items.length <= 1) {
+    return null
+  }
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url
+    }))
+  }
+}
+
 export default defineConfig({
   title: site.name,
   description: site.description,
@@ -203,7 +343,7 @@ export default defineConfig({
     const head = []
 
     // 添加 canonical URL（避免重複內容問題）
-    const canonicalUrl = `${site.url}/${pageData.relativePath.replace(/\.md$/, '').replace(/index$/, '')}`
+    const canonicalUrl = buildPageUrl(pageData)
     head.push(['link', { rel: 'canonical', href: canonicalUrl }])
 
     // 為文章頁面添加特定的 meta 標籤（透過 frontmatter.issueId 判斷）
@@ -214,6 +354,13 @@ export default defineConfig({
     head.push(['meta', { name: 'description', content: description }])
     head.push(['meta', { property: 'og:description', content: description }])
     head.push(['meta', { name: 'twitter:description', content: description }])
+
+    head.push(['script', { type: 'application/ld+json' }, serializeJsonLd(buildStructuredData(pageData))])
+
+    const breadcrumbSchema = buildBreadcrumbSchema(pageData)
+    if (breadcrumbSchema) {
+      head.push(['script', { type: 'application/ld+json' }, serializeJsonLd(breadcrumbSchema)])
+    }
     
     if (frontmatter.issueId) {
       // 文章專屬 OG 標籤
@@ -279,4 +426,3 @@ export default defineConfig({
     }
   }
 })
-
