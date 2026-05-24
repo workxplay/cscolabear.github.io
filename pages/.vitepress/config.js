@@ -186,7 +186,8 @@ export default defineConfig({
   // Head 設定（SEO 優化）
   head: [
     // Favicon
-    ['link', { rel: 'icon', href: '/favicon.ico' }],
+    ['link', { rel: 'icon', href: '/logo.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'icon', href: '/favicon.ico', sizes: 'any' }],
 
     // 主題顏色
     ['meta', { name: 'theme-color', content: seo.themeColor }],
@@ -242,7 +243,12 @@ export default defineConfig({
 
   // 主題配置
   themeConfig: {
-    logo: '/favicon.ico',
+    logo: {
+      src: '/logo.svg',
+      alt: 'WorkxPlay logo',
+      width: '24',
+      height: '24'
+    },
 
     nav: [
       { text: '首頁', link: '/' },

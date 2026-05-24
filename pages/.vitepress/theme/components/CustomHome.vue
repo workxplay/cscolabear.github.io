@@ -1,5 +1,5 @@
 <template>
-  <div class="custom-home">
+  <main class="custom-home">
     <!-- Hero 區塊 -->
     <div class="hero-section">
       <div class="container">
@@ -47,7 +47,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </main>
 </template>
 
 <script setup>
